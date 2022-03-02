@@ -2,6 +2,7 @@ const { exec } = require("child_process");
 const colors = require("colors");
 const fs = require("fs");
 const path = require("path");
+const prompt = require("prompt-sync")({ sigint: true });
 
 function commandToPromise(commandStr) {
   return new Promise(function (resolve, reject) {
@@ -16,19 +17,30 @@ function commandToPromise(commandStr) {
 }
 
 const main = async () => {
-  try {
-    let outputString = await commandToPromise("adb devices");
-    if (outputString.stderr) {
-      console.error("Ocurrio un error al generar la lista de dispositivos");
-      return;
+  let cont = "s";
+
+  while (cont.toLowerCase() === "s") {
+    console.clear();
+    try {
+      let outputString = await commandToPromise("adb devices");
+      if (outputString.stderr) {
+        console.error("Ocurrio un error al generar la lista de dispositivos");
+        return;
+      }
+      let deviceList = generateDeviceList(outputString.stdout);
+      if (deviceList.length === 0) {
+        console.log("No se encontraron dispositivos conectados.".white.bgRed);
+      } else {
+        for (let deviceID of deviceList) {
+          await installAPKS(deviceID);
+          await installBundles(deviceID);
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
-    let deviceList = generateDeviceList(outputString.stdout);
-    for (let deviceID of deviceList) {
-      await installAPKS(deviceID);
-      await installBundles(deviceID);
-    }
-  } catch (error) {
-    console.error(error);
+
+    cont = prompt("Desea  volver a ejercutar el script? S/N >>> ");
   }
 };
 
@@ -200,7 +212,10 @@ async function bundleInstaller(deviceID, bundleDirPath, bundleName) {
             if (installWrite.stderr) {
               console.log(`El proceso finalizó con errores ${result.stderr}`);
             }
-            console.log(`Exitosamente instalado el conjunto ${bundleName} en el dispositivo ${deviceID}`.green);
+            console.log(
+              `Exitosamente instalado el conjunto ${bundleName} en el dispositivo ${deviceID}`
+                .green
+            );
           } catch (error) {
             console.error(
               "Error: ".red,
