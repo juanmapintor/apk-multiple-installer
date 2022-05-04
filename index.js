@@ -17,10 +17,6 @@ function commandToPromise(commandStr) {
 }
 
 const main = async () => {
-  let cont = "s";
-
-  while (cont.toLowerCase() === "s") {
-    console.clear();
     try {
       let outputString = await commandToPromise("adb devices");
       if (outputString.stderr) {
@@ -39,9 +35,6 @@ const main = async () => {
     } catch (error) {
       console.error(error);
     }
-
-    cont = prompt("Desea  volver a ejercutar el script? S/N >>> ");
-  }
 };
 
 main();
